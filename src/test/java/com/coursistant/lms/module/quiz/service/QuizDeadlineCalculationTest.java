@@ -37,4 +37,14 @@ class QuizDeadlineCalculationTest {
         LocalDateTime closes = LocalDateTime.of(2026, 7, 25, 10, 20);
         assertEquals(closes, timeSupport.computeDeadline(started, closes, 3600));
     }
+
+    @Test
+    void windowOpen_includesOpensAtAndExcludesClosesAt() {
+        LocalDateTime opens = LocalDateTime.of(2026, 9, 5, 0, 0);
+        LocalDateTime closes = LocalDateTime.of(2026, 9, 26, 23, 59);
+        assertEquals(false, timeSupport.isWindowOpen(opens, closes, LocalDateTime.of(2026, 9, 4, 23, 59)));
+        assertEquals(true, timeSupport.isWindowOpen(opens, closes, opens));
+        assertEquals(true, timeSupport.isWindowOpen(opens, closes, LocalDateTime.of(2026, 9, 10, 12, 0)));
+        assertEquals(false, timeSupport.isWindowOpen(opens, closes, closes));
+    }
 }

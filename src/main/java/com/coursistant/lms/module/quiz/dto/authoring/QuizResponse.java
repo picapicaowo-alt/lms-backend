@@ -37,6 +37,8 @@ public class QuizResponse {
     private String resultVisibility;
     @Schema(description = "Lifecycle state", example = "Draft", allowableValues = {"Draft", "Published"})
     private String state;
+    @Schema(description = "True when now is within [opensAt, closesAt). Independent of Draft/Published.")
+    private Boolean windowOpen;
     @Schema(description = "Optimistic concurrency version", example = "1")
     private Integer version;
     @Schema(description = "Sum of question points", example = "10.0")

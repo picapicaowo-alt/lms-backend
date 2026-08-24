@@ -18,12 +18,15 @@ import com.coursistant.lms.module.interaction.notification.enums.SubjectType;
 import com.coursistant.lms.module.interaction.notification.service.NotificationCommitHook;
 import com.coursistant.lms.module.interaction.notification.service.NotificationMessageFactory;
 import com.coursistant.lms.module.interaction.notification.service.NotificationRecipientResolver;
+import com.coursistant.lms.module.interaction.notification.service.NotificationService;
 import com.coursistant.lms.module.interaction.notification.service.NotificationTimeSupport;
 import com.coursistant.lms.module.user.account.entity.User;
 import com.coursistant.lms.module.user.account.repository.UserMapper;
 import com.coursistant.lms.shared.api.ApiException;
 import com.coursistant.lms.shared.api.ErrorType;
 import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,7 @@ import java.util.List;
 @Service
 public class CourseAnnouncementService {
 
+    private static final Logger log = LoggerFactory.getLogger(CourseAnnouncementService.class);
     private static final String STATE_ARCHIVED = "Archived";
     private static final int LIST_LIMIT = 100;
     private static final int RECENT_DEFAULT = 10;
@@ -66,6 +70,9 @@ public class CourseAnnouncementService {
 
     @Resource
     private NotificationTimeSupport notificationTimeSupport;
+
+    @Resource
+    private NotificationService notificationService;
 
     public List<AnnouncementSummaryResponse> listByCourse(Integer courseId, Integer userId) {
         requireCourseNotArchived(courseId);
@@ -120,7 +127,8 @@ public class CourseAnnouncementService {
         payload.setRecipientIds(recipientIds);
         payload.setCreatedAt(notificationTimeSupport.nowUtc());
         notificationCommitHook.afterCommitDispatch(payload);
-        return toDetail(persisted, false);
+        markAnnouncementRead(persisted.getId(), authorUserId);
+        return toDetail(persisted, true);
     }
 
     @Transactional
@@ -193,6 +201,12 @@ public class CourseAnnouncementService {
         read.setUserId(userId);
         read.setReadAt(LocalDateTime.now());
         courseAnnouncementReadMapper.insertIgnore(read);
+        try {
+            notificationService.markSubjectRead(userId, SubjectType.ANNOUNCEMENT, announcementId);
+        } catch (RuntimeException e) {
+            log.warn("Could not sync announcement notification read state. announcementId={} userId={}",
+                    announcementId, userId, e);
+        }
     }
 
     private Course requireCourseNotArchived(Integer courseId) {

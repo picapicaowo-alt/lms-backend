@@ -186,8 +186,7 @@ public class QuizAccessService {
     }
 
     public void assertQuizWindowOpen(Quiz quiz) {
-        LocalDateTime now = quizTimeSupport.nowUtc();
-        if (now.isBefore(quiz.getOpensAt()) || !now.isBefore(quiz.getClosesAt())) {
+        if (!quizTimeSupport.isWindowOpen(quiz.getOpensAt(), quiz.getClosesAt())) {
             throw new ApiException(ErrorType.QUIZ_WINDOW_CLOSED);
         }
     }

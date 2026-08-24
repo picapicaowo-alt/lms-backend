@@ -282,7 +282,7 @@ public class CourseMaterialService {
             InputStream stream = minIOService.downloadFile(material.getObjectKey(), courseContentFilePolicy.bucket());
             MediaType mediaType = resolveMediaType(material.getContentType());
             return ResponseEntity.ok()
-                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_TYPE, mediaType.getType() + "/" + mediaType.getSubtype())
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + sanitizeHeaderValue(material.getDisplayName()) + "\"")
                     .body(new InputStreamResource(stream));
         } catch (Exception e) {
@@ -306,7 +306,7 @@ public class CourseMaterialService {
             InputStream stream = minIOService.downloadFile(material.getObjectKey(), courseContentFilePolicy.bucket());
             MediaType mediaType = resolveMediaType(material.getContentType());
             return ResponseEntity.ok()
-                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_TYPE, mediaType.getType() + "/" + mediaType.getSubtype())
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + sanitizeHeaderValue(material.getOriginalFilename()) + "\"")
                     .body(new InputStreamResource(stream));
         } catch (Exception e) {

@@ -53,9 +53,6 @@ public class AssignmentRubricService {
 
     public RubricResponse get(HttpServletRequest request, Integer courseId, Integer assignmentId, Integer userId) {
         Assignment assignment = assignmentAccessService.requireAssignmentReadable(request, courseId, assignmentId, userId);
-        if (assignment.getCurrentRubricVersionId() == null) {
-            throw AssignmentErrors.fail(log, courseId, assignmentId, userId, ErrorType.RUBRIC_NOT_FOUND, null);
-        }
         return toResponse(assignment);
     }
 

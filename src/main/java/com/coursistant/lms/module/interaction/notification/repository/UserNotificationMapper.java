@@ -36,4 +36,10 @@ public interface UserNotificationMapper {
     int markAllRead(@Param("tenantId") Integer tenantId,
                     @Param("recipientUserId") Integer recipientUserId,
                     @Param("readAt") LocalDateTime readAt);
+
+    int markReadBySubject(@Param("tenantId") Integer tenantId,
+                          @Param("recipientUserId") Integer recipientUserId,
+                          @Param("subjectType") String subjectType,
+                          @Param("subjectId") Integer subjectId,
+                          @Param("readAt") LocalDateTime readAt);
 }

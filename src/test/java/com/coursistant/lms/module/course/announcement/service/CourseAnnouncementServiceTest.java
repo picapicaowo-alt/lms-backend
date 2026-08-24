@@ -1,7 +1,9 @@
 package com.coursistant.lms.module.course.announcement.service;
 
 import com.coursistant.lms.module.course.announcement.dto.AnnouncementResponse;
+import com.coursistant.lms.module.course.announcement.dto.AnnouncementSummaryResponse;
 import com.coursistant.lms.module.course.announcement.dto.CreateAnnouncementRequest;
+import com.coursistant.lms.module.course.announcement.dto.RecentAnnouncementResponse;
 import com.coursistant.lms.module.course.announcement.entity.CourseAnnouncement;
 import com.coursistant.lms.module.course.announcement.repository.CourseAnnouncementMapper;
 import com.coursistant.lms.module.course.announcement.repository.CourseAnnouncementReadMapper;
@@ -14,6 +16,7 @@ import com.coursistant.lms.module.interaction.notification.enums.SubjectType;
 import com.coursistant.lms.module.interaction.notification.service.NotificationCommitHook;
 import com.coursistant.lms.module.interaction.notification.service.NotificationMessageFactory;
 import com.coursistant.lms.module.interaction.notification.service.NotificationRecipientResolver;
+import com.coursistant.lms.module.interaction.notification.service.NotificationService;
 import com.coursistant.lms.module.interaction.notification.service.NotificationTimeSupport;
 import com.coursistant.lms.module.user.account.entity.User;
 import com.coursistant.lms.module.user.account.repository.UserMapper;
@@ -33,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -68,6 +72,9 @@ class CourseAnnouncementServiceTest {
 
     @Mock
     private NotificationTimeSupport notificationTimeSupport;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private CourseAnnouncementService courseAnnouncementService;
@@ -115,6 +122,9 @@ class CourseAnnouncementServiceTest {
 
         assertNotNull(response);
         assertEquals(99, response.getId());
+        assertTrue(response.getRead());
+        verify(courseAnnouncementReadMapper).insertIgnore(any());
+        verify(notificationService).markSubjectRead(10, SubjectType.ANNOUNCEMENT, 99);
 
         ArgumentCaptor<NotificationDispatchPayload> captor =
                 ArgumentCaptor.forClass(NotificationDispatchPayload.class);
@@ -173,6 +183,9 @@ class CourseAnnouncementServiceTest {
         AnnouncementResponse response = courseAnnouncementService.create(17, 10, request);
         assertNotNull(response);
         assertEquals(99, response.getId());
+        assertTrue(response.getRead());
+        verify(courseAnnouncementReadMapper).insertIgnore(any());
+        verify(notificationService).markSubjectRead(10, SubjectType.ANNOUNCEMENT, 99);
 
         ArgumentCaptor<NotificationDispatchPayload> captor =
                 ArgumentCaptor.forClass(NotificationDispatchPayload.class);
@@ -205,5 +218,51 @@ class CourseAnnouncementServiceTest {
                 () -> courseAnnouncementService.getById(17, 404, 10));
         assertEquals(ErrorType.ANNOUNCEMENT_GONE, ex.getErrorType());
         assertEquals("Content no longer available", ex.getMessage());
+    }
+
+    @Test
+    void getById_marksAnnouncementAndMatchingNotificationRead() {
+        Course course = new Course();
+        course.setId(17);
+        course.setState("Active");
+        when(courseMapper.selectById(17)).thenReturn(course);
+
+        CourseAnnouncement announcement = new CourseAnnouncement();
+        announcement.setId(99);
+        announcement.setCourseId(17);
+        announcement.setTitle("Hello");
+        announcement.setBodyHtml("Body");
+        announcement.setAuthorUserId(10);
+        announcement.setAuthorName("Teacher");
+        when(courseAnnouncementMapper.selectById(99)).thenReturn(announcement);
+
+        AnnouncementResponse response = courseAnnouncementService.getById(17, 99, 385);
+
+        assertTrue(response.getRead());
+        verify(courseAnnouncementReadMapper).insertIgnore(any());
+        verify(notificationService).markSubjectRead(385, SubjectType.ANNOUNCEMENT, 99);
+    }
+
+    @Test
+    void listRecentForUser_mapsReadFlagToUnread() {
+        AnnouncementSummaryResponse unread = new AnnouncementSummaryResponse();
+        unread.setId(1);
+        unread.setCourseId(17);
+        unread.setCourseCode("CSCI-310");
+        unread.setTitle("Unread post");
+        unread.setRead(false);
+        AnnouncementSummaryResponse read = new AnnouncementSummaryResponse();
+        read.setId(2);
+        read.setCourseId(17);
+        read.setCourseCode("CSCI-310");
+        read.setTitle("Own post");
+        read.setRead(true);
+        when(courseAnnouncementMapper.selectRecentForUser(10, 10)).thenReturn(List.of(unread, read));
+
+        List<RecentAnnouncementResponse> result = courseAnnouncementService.listRecentForUser(10, null);
+
+        assertEquals(2, result.size());
+        assertTrue(result.get(0).getUnread());
+        assertFalse(result.get(1).getUnread());
     }
 }

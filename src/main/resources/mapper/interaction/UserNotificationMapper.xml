@@ -111,4 +111,14 @@
           AND recipient_user_id = #{recipientUserId}
           AND read_at IS NULL
     </update>
+
+    <update id="markReadBySubject">
+        UPDATE user_notification
+        SET read_at = #{readAt}
+        WHERE tenant_id = #{tenantId}
+          AND recipient_user_id = #{recipientUserId}
+          AND subject_type = #{subjectType}
+          AND subject_id = #{subjectId}
+          AND read_at IS NULL
+    </update>
 </mapper>

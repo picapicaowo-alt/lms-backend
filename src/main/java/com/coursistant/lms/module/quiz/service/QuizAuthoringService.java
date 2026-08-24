@@ -210,6 +210,7 @@ public class QuizAuthoringService {
         r.setAttemptsAllowed(quiz.getAttemptsAllowed());
         r.setResultVisibility(quiz.getResultVisibility());
         r.setState(quiz.getState());
+        r.setWindowOpen(quizTimeSupport.isWindowOpen(quiz.getOpensAt(), quiz.getClosesAt()));
         r.setVersion(quiz.getVersion());
         r.setTotalPoints(quizQuestionMapper.sumPointsByQuizId(quiz.getId()));
         r.setQuestionCount(quizQuestionMapper.countByQuizId(quiz.getId()));

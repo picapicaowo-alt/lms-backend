@@ -57,7 +57,7 @@
             a.author_name AS authorName,
             a.posted_at AS postedAt,
             a.edited_at AS editedAt,
-            CASE WHEN r.user_id IS NULL THEN 0 ELSE 1 END AS `read`
+            CASE WHEN r.user_id IS NOT NULL OR a.author_user_id = #{userId} THEN 1 ELSE 0 END AS `read`
         FROM course_announcement a
         INNER JOIN course c ON c.id = a.course_id
         LEFT JOIN course_announcement_read r
@@ -78,7 +78,7 @@
             a.author_name AS authorName,
             a.posted_at AS postedAt,
             a.edited_at AS editedAt,
-            CASE WHEN r.user_id IS NULL THEN 0 ELSE 1 END AS `read`
+            CASE WHEN r.user_id IS NOT NULL OR a.author_user_id = #{userId} THEN 1 ELSE 0 END AS `read`
         FROM course_announcement a
         INNER JOIN enrollment e
             ON e.course_id = a.course_id AND e.user_id = #{userId} AND e.active = 1

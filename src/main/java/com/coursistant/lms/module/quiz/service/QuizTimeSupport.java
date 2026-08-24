@@ -41,4 +41,16 @@ public class QuizTimeSupport {
         LocalDateTime limitEnd = startedAt.plusSeconds(timeLimitSeconds);
         return limitEnd.isBefore(closesAt) ? limitEnd : closesAt;
     }
+
+    /** Inclusive of opensAt, exclusive of closesAt, using the stored UTC wall-clock values. */
+    public boolean isWindowOpen(LocalDateTime opensAt, LocalDateTime closesAt) {
+        return isWindowOpen(opensAt, closesAt, nowUtc());
+    }
+
+    public boolean isWindowOpen(LocalDateTime opensAt, LocalDateTime closesAt, LocalDateTime nowUtc) {
+        if (opensAt == null || closesAt == null || nowUtc == null) {
+            return false;
+        }
+        return !nowUtc.isBefore(opensAt) && nowUtc.isBefore(closesAt);
+    }
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -25,5 +26,14 @@ public class NotificationWriteService {
             return 0;
         }
         return userNotificationMapper.insertChunk(rows);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int markReadBySubject(Integer tenantId, Integer recipientUserId, String subjectType,
+                                 Integer subjectId, LocalDateTime readAt) {
+        if (tenantId == null || recipientUserId == null || subjectType == null || subjectId == null || readAt == null) {
+            return 0;
+        }
+        return userNotificationMapper.markReadBySubject(tenantId, recipientUserId, subjectType, subjectId, readAt);
     }
 }

@@ -1,6 +1,7 @@
 package com.coursistant.lms.module.interaction.notification.service;
 
 import com.coursistant.lms.module.interaction.notification.entity.UserNotification;
+import com.coursistant.lms.module.interaction.notification.enums.SubjectType;
 import com.coursistant.lms.module.interaction.notification.repository.UserNotificationMapper;
 import com.coursistant.lms.module.user.account.entity.User;
 import com.coursistant.lms.module.user.account.repository.UserMapper;
@@ -33,6 +34,9 @@ class NotificationServiceTest {
 
     @Mock
     private NotificationTimeSupport notificationTimeSupport;
+
+    @Mock
+    private NotificationWriteService notificationWriteService;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -95,5 +99,19 @@ class NotificationServiceTest {
         when(userNotificationMapper.countUnread(7, 10)).thenReturn(4L);
 
         assertEquals(4L, notificationService.unreadCount(10).getUnreadCount());
+    }
+
+    @Test
+    void markSubjectRead_updatesMatchingRows() {
+        User user = new User();
+        user.setId(10);
+        user.setTenantId(7);
+        when(userMapper.selectById(10)).thenReturn(user);
+        when(notificationTimeSupport.nowUtc()).thenReturn(java.time.LocalDateTime.of(2026, 7, 1, 12, 0, 0));
+
+        notificationService.markSubjectRead(10, SubjectType.ANNOUNCEMENT, 99);
+
+        verify(notificationWriteService).markReadBySubject(
+                eq(7), eq(10), eq("ANNOUNCEMENT"), eq(99), any());
     }
 }

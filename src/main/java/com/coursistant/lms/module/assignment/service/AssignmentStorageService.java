@@ -14,8 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.net.URLEncoder;
 
 /**
  * MinIO access for assignment objects. Storage failures surface as
@@ -46,14 +44,21 @@ public class AssignmentStorageService {
                                                       boolean attachment, Integer courseId, Integer assignmentId,
                                                       Integer userId) {
         try {
+            if (objectKey == null || objectKey.isBlank()) {
+                throw new ApiException(ErrorType.STORAGE_FAILURE, "Failed to load the requested file");
+            }
             InputStream stream = minIOService.downloadFile(objectKey, assignmentFilePolicy.bucket());
             String filename = assignmentFilePolicy.sanitizeFilename(originalName);
-            String disposition = (attachment ? "attachment" : "inline")
-                    + "; filename=\"" + filename + "\""
-                    + "; filename*=UTF-8''" + URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+            MediaType mediaType = resolveMediaType(contentType);
+            // Match course-material streaming: a quoted filename only. The previous
+            // filename* parameter made Tomcat/Spring reject `inline` PDF responses with
+            // an uncaught 500, so Preview failed even when Download of the same object
+            // succeeded. Do not use .contentType(MediaType): it appends charset=UTF-8
+            // and Chrome then refuses to preview the PDF blob.
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
-                    .contentType(resolveMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            (attachment ? "attachment" : "inline") + "; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_TYPE, mediaType.getType() + "/" + mediaType.getSubtype())
                     .body(new InputStreamResource(stream));
         } catch (Exception e) {
             log.error("Assignment object download failed: courseId={}, assignmentId={}, userId={}, errorType={}, objectKey={}, cause={}",

@@ -158,7 +158,7 @@ public class CourseSyllabusService {
                     + "; filename=\"" + sanitizeFilename(version.getOriginalFilename()) + "\"";
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, disposition)
-                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_TYPE, mediaType.getType() + "/" + mediaType.getSubtype())
                     .body(new InputStreamResource(stream));
         } catch (ApiException e) {
             throw e;

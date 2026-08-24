@@ -4,6 +4,7 @@ import com.coursistant.lms.module.interaction.notification.dto.NotificationPageR
 import com.coursistant.lms.module.interaction.notification.dto.NotificationResponse;
 import com.coursistant.lms.module.interaction.notification.dto.UnreadCountResponse;
 import com.coursistant.lms.module.interaction.notification.entity.UserNotification;
+import com.coursistant.lms.module.interaction.notification.enums.SubjectType;
 import com.coursistant.lms.module.interaction.notification.repository.UserNotificationMapper;
 import com.coursistant.lms.module.user.account.entity.User;
 import com.coursistant.lms.module.user.account.repository.UserMapper;
@@ -29,6 +30,9 @@ public class NotificationService {
 
     @Resource
     private NotificationTimeSupport notificationTimeSupport;
+
+    @Resource
+    private NotificationWriteService notificationWriteService;
 
     public NotificationPageResponse list(Integer userId, Integer page, Integer size) {
         Integer tenantId = requireTenantId(userId);
@@ -72,6 +76,15 @@ public class NotificationService {
         Integer tenantId = requireTenantId(userId);
         userNotificationMapper.markAllRead(tenantId, userId, notificationTimeSupport.nowUtc());
         return new UnreadCountResponse(0);
+    }
+
+    public void markSubjectRead(Integer userId, SubjectType subjectType, Integer subjectId) {
+        if (userId == null || subjectType == null || subjectId == null) {
+            return;
+        }
+        Integer tenantId = requireTenantId(userId);
+        notificationWriteService.markReadBySubject(
+                tenantId, userId, subjectType.name(), subjectId, notificationTimeSupport.nowUtc());
     }
 
     private Integer requireTenantId(Integer userId) {
